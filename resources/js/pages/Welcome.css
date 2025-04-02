@@ -1,0 +1,244 @@
+/* Welcome.css */
+
+/* Base styles for the entire page */
+.welcome-page {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4; /* Light gray background */
+    color: #333; /* Dark gray text */
+    display: flex;
+    flex-direction: column; /* Stack header, main, footer vertically */
+    min-height: 100vh; /* Ensure the page takes up at least the full viewport height */
+  }
+  
+  /* Header styles */
+  .welcome-header {
+    background-color: #007bff; /* Blue header background */
+    color: white;
+    padding: 1rem 2rem;
+  }
+  
+  /* Navbar styles */
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .navbar-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+  }
+  
+  .navbar-links a {
+    color: white;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+  }
+  
+  .navbar-links a:hover {
+    color: #cce5ff; /* Lighter blue on hover */
+    text-decoration: underline;
+  }
+  
+  /* Main content styles */
+  .welcome-main {
+    flex-grow: 1; /* Allow main content to take up remaining vertical space */
+    padding: 2rem;
+  }
+  
+  /* Hero section styles */
+  .hero {
+    background-color: #e9ecef; /* Light gray background for hero */
+    padding: 4rem 2rem;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+  
+  .hero-content h1 {
+    font-size: 2.8rem;
+    margin-bottom: 1rem;
+    color: #212529; /* Dark text for heading */
+  }
+  
+  .hero-content p {
+    font-size: 1.25rem;
+    color: #6c757d; /* Gray text for paragraph */
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+  }
+  
+  .hero-button {
+    background-color: #28a745; /* Green button */
+    color: white;
+    padding: 1.2rem 2.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .hero-button:hover {
+    background-color: #1e7e34; /* Darker green on hover */
+  }
+  
+  /* Advantages section styles */
+  .advantages {
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .advantages h2 {
+    font-size: 2.2rem;
+    margin-bottom: 2rem;
+    color: #212529;
+  }
+  
+  .advantages-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .advantage-card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .advantage-card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .advantage-card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #007bff;
+    font-size: 1.5rem;
+  }
+  
+  .advantage-card p {
+    color: #6c757d;
+    line-height: 1.6;
+  }
+  
+  /* Features section styles */
+  .features {
+    padding: 3rem 2rem;
+    text-align: center;
+    background-color: #f8f9fa; /* Very light gray background */
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+  
+  .features h2 {
+    font-size: 2.2rem;
+    margin-bottom: 2rem;
+    color: #212529;
+  }
+  
+  .feature-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .feature-card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .feature-card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #17a2b8; /* Teal color */
+    font-size: 1.5rem;
+  }
+  
+  .feature-button {
+    background-color: #17a2b8; /* Teal button */
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    transition: background-color 0.3s ease;
+  }
+  
+  .feature-button:hover {
+    background-color: #138d9f; /* Darker teal on hover */
+  }
+  
+  .feature-card input[type="text"] {
+    padding: 1rem;
+    border: 1px solid #ced4da; /* Light gray border */
+    border-radius: 6px;
+    width: 100%;
+    margin-top: 1.5rem;
+    font-size: 1rem;
+  }
+  
+  /* Footer styles */
+  .welcome-footer {
+    background-color: #343a40; /* Dark gray footer */
+    color: white;
+    text-align: center;
+    padding: 1.5rem 0;
+    margin-top: 3rem;
+    border-top: 1px solid #495057; /* Slightly lighter dark gray border */
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .navbar-title {
+      font-size: 1.5rem;
+    }
+  
+    .navbar-links a {
+      margin-left: 1rem;
+      font-size: 1rem;
+    }
+  
+    .hero {
+      padding: 3rem 1.5rem;
+    }
+  
+    .hero-content h1 {
+      font-size: 2.2rem;
+    }
+  
+    .hero-content p {
+      font-size: 1.1rem;
+    }
+  
+    .advantages,
+    .features {
+      padding: 2rem 1.5rem;
+    }
+  
+    .advantages h2,
+    .features h2 {
+      font-size: 2rem;
+    }
+  }
