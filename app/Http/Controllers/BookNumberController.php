@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\BookNumber;
 use App\Models\Book;
 use App\Models\Penalty; // Make sure you have this model
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -164,33 +166,49 @@ class BookNumberController extends Controller
      * @param  \App\Models\BookNumber  $bookNumber
      * @return \Illuminate\Http\JsonResponse
      */
-    public function assign(Request $request, BookNumber $bookNumber)
+   /**
+     * Assign a book number to a user/client (API).
+     * Handles: PUT /api/book-numbers/{bookNumber}/assign
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\BookNumber  $bookNumber (Route Model Binding)
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function assign(Request $request, $bookNumberId) // Or use Route Model Binding: (Request $request, BookNumber $bookNumber)
     {
-        Log::info('BookNumberController: assign method called, book number ID: ' . $bookNumber->id);
+        // --- START VALIDATION ---
+        $validatedData = $request->validate([
+            // Ensure 'assigned_to' is provided, is an integer, AND exists in the 'id' column of the 'clients' table
+            'assigned_to' => ['required', 'integer', 'exists:clients,id'],
 
-        $validator = Validator::make($request->all(), [
-            'assigned_to' => 'required|integer',
-            'date_to_be_returned' => 'required|date',
+            // Ensure 'date_to_be_returned' is provided, is a valid date, and not in the past
+            // Adjust format if needed, YYYY-MM-DD is standard from frontend DatePicker
+            'date_to_be_returned' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
         ]);
+        // --- END VALIDATION ---
 
-        if ($validator->fails()) {
-            Log::warning('BookNumberController: assign method validation failed: ' . json_encode($validator->errors()));
-            return response()->json(['errors' => $validator->errors()], 422);
+        // Find the specific book number instance. Use findOrFail to automatically handle not found.
+        $bookNumber = BookNumber::findOrFail($bookNumberId); // If using Route Model Binding, you already have $bookNumber
+
+        // Optional but Recommended: Check if the book is actually available
+        // Replace 'available' with your actual status value/enum if different
+        if ($bookNumber->status !== 'available') {
+             // Return a specific error response (e.g., 409 Conflict)
+             return response()->json(['message' => 'This book copy is currently not available for assignment.'], 409);
         }
 
-        try {
-            $bookNumber->update([
-                'assigned_to' => $validator->validated()['assigned_to'],
-                'date_to_be_returned' => $validator->validated()['date_to_be_returned'],
-                'status' => 'assigned',
-            ]);
-            Log::info('BookNumberController: assign method successful, book number ID: ' . $bookNumber->id);
-            return response()->json(['message' => 'Book number assigned successfully', 'book_number' => $bookNumber], 200);
-        } catch (\Exception $e) {
-            Log::error('BookNumberController: assign method error: ' . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        // Optional: Add logic here to check client borrowing limits if applicable
+
+        // --- Perform the Assignment ---
+        $bookNumber->status = 'assigned'; // Use the correct status string/enum
+        $bookNumber->assigned_to = $validatedData['assigned_to']; // Use validated data
+        $bookNumber->date_to_be_returned = $validatedData['date_to_be_returned']; // Use validated data
+        $bookNumber->save(); // Eloquent handles the update and updated_at timestamp
+
+        // Return a success response
+        return response()->json(['message' => 'Book assigned successfully!']);
     }
+
 
     /**
      * Collect a book number from a user.

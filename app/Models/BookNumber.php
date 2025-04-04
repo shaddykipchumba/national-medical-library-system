@@ -13,17 +13,30 @@ class BookNumber extends Model
         'book_id',
         'book_number',
         'status',
-        'assigned_to',
+        'assigned_to', // Holds the ID of the borrower (Client or User)
         'date_to_be_returned',
     ];
 
+    // Existing relationship to the main Book details
     public function book()
     {
         return $this->belongsTo(Book::class);
     }
 
-    public function assignedUser()
+    // --- IMPORTANT: Decide which relationship to use based on assigned_to ---
+
+    // Original relationship (if assigned_to links to User model)
+    // public function assignedUser()
+    // {
+    //     return $this->belongsTo(User::class, 'assigned_to');
+    // }
+
+    // ****** NEW/ALTERNATIVE: Relationship if assigned_to links to Client model ******
+    public function assignedClient()
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(Client::class, 'assigned_to');
     }
+
+    // You might need logic elsewhere to determine which relationship to use,
+    // or ensure 'assigned_to' *only* ever holds Client IDs if clients are the only borrowers.
 }

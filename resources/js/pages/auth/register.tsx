@@ -1,14 +1,20 @@
-import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { useEffect, FormEventHandler } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+// --- Ant Design Imports ---
+import { Form, Input, Button, Row, Col, Card, Typography, Alert, Space } from 'antd';
+import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
+// --- Layout Import ---
+import AuthLayout from '@/layouts/auth-layout'; // ****** USE YOUR AUTH LAYOUT ******
+// --- Type Imports ---
+import type { PageProps } from '@/types';
 
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+// Declare route function if not globally typed
+declare function route(name: string, params?: any, absolute?: boolean): string;
 
+// Props interface - Register likely doesn't need specific props from controller
+interface Props extends PageProps {}
+
+// Form data structure
 type RegisterForm = {
     name: string;
     email: string;
@@ -17,103 +23,149 @@ type RegisterForm = {
 };
 
 export default function Register() {
-    const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
+    const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
     });
 
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
+    // Reset password fields on component unmount
+    useEffect(() => {
+        return () => {
+            reset('password', 'password_confirmation');
+        };
+    }, []);
+
+    // Handler for Ant Design Form submission
+    const onFinish = (values: Partial<RegisterForm>) => { // values from antd aren't used directly, we use Inertia's 'data'
+        // Post Inertia form data to the 'register' route (Admin registration)
         post(route('register'), {
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };
 
     return (
-        <AuthLayout title="Create an account" description="Enter your details below to create your account">
-            <Head title="Register" />
-            <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                            id="name"
-                            type="text"
-                            required
-                            autoFocus
-                            tabIndex={1}
-                            autoComplete="name"
-                            value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
-                            disabled={processing}
-                            placeholder="Full name"
-                        />
-                        <InputError message={errors.name} className="mt-2" />
-                    </div>
+        // Use AuthLayout wrapper
+        <AuthLayout
+            title="Create Admin Account"
+            description="Enter details below to create a new administrator account."
+        >
+            <Head title="Admin Register" />
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            required
-                            tabIndex={2}
-                            autoComplete="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            disabled={processing}
-                            placeholder="email@example.com"
-                        />
-                        <InputError message={errors.email} />
-                    </div>
+            {/* Ant Design Form */}
+            <Form
+                name="admin_register"
+                onFinish={onFinish}
+                layout="vertical"
+                requiredMark={false}
+                // style={{ marginTop: '24px' }} // Adjust margin if needed within AuthLayout
+            >
+                {/* Name Field */}
+                <Form.Item
+                    // label="Admin Name" // Label might be redundant if AuthLayout has titles
+                    name="name" // Helps antd link label/errors if label were present
+                    validateStatus={errors.name ? 'error' : ''}
+                    help={errors.name}
+                    rules={[{ required: true, message: 'Please input the Admin Name!', whitespace: true }]}
+                >
+                    <Input
+                        prefix={<UserOutlined />}
+                        placeholder="Full Name"
+                        value={data.name}
+                        onChange={(e) => setData('name', e.target.value)}
+                        size="large"
+                        autoFocus
+                    />
+                </Form.Item>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            required
-                            tabIndex={3}
-                            autoComplete="new-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            disabled={processing}
-                            placeholder="Password"
-                        />
-                        <InputError message={errors.password} />
-                    </div>
+                {/* Email Field */}
+                <Form.Item
+                    // label="Admin Email"
+                    name="email"
+                    validateStatus={errors.email ? 'error' : ''}
+                    help={errors.email}
+                    rules={[{ required: true, message: 'Please input the Admin Email!', type: 'email' }]}
+                >
+                    <Input
+                        prefix={<MailOutlined />}
+                        placeholder="Admin Email Address"
+                        value={data.email}
+                        onChange={(e) => setData('email', e.target.value)}
+                        size="large"
+                    />
+                </Form.Item>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation">Confirm password</Label>
-                        <Input
-                            id="password_confirmation"
-                            type="password"
-                            required
-                            tabIndex={4}
-                            autoComplete="new-password"
-                            value={data.password_confirmation}
-                            onChange={(e) => setData('password_confirmation', e.target.value)}
-                            disabled={processing}
-                            placeholder="Confirm password"
-                        />
-                        <InputError message={errors.password_confirmation} />
-                    </div>
+                {/* Password Field */}
+                <Form.Item
+                    // label="Password"
+                    name="password"
+                    validateStatus={errors.password ? 'error' : ''}
+                    help={errors.password}
+                    rules={[{ required: true, message: 'Please input the Password!' }]}
+                    hasFeedback // Adds icon feedback based on validation status
+                >
+                    <Input.Password
+                        prefix={<LockOutlined />}
+                        placeholder="Password"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                        size="large"
+                    />
+                </Form.Item>
 
-                    <Button type="submit" className="mt-2 w-full" tabIndex={5} disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Create account
+                {/* Confirm Password Field */}
+                <Form.Item
+                    // label="Confirm Password"
+                    name="password_confirmation"
+                    dependencies={['password']} // Crucial for matching rule
+                    validateStatus={errors.password_confirmation ? 'error' : ''}
+                    help={errors.password_confirmation}
+                    hasFeedback
+                    rules={[
+                        { required: true, message: 'Please confirm the Password!' },
+                        ({ getFieldValue }) => ({
+                            validator(_, value) {
+                                if (!value || getFieldValue('password') === value) {
+                                    return Promise.resolve();
+                                }
+                                return Promise.reject(new Error('The two passwords do not match!'));
+                            },
+                        }),
+                    ]}
+                >
+                    <Input.Password
+                        prefix={<LockOutlined />}
+                        placeholder="Confirm Password"
+                        value={data.password_confirmation}
+                        onChange={(e) => setData('password_confirmation', e.target.value)}
+                        size="large"
+                    />
+                </Form.Item>
+
+                {/* Submit Button */}
+                <Form.Item style={{ marginTop: '24px' }}>
+                    <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={processing} // Use antd loading state
+                        block
+                        size="large"
+                    >
+                        Create Admin Account
                     </Button>
-                </div>
+                </Form.Item>
 
-                <div className="text-muted-foreground text-center text-sm">
-                    Already have an account?{' '}
-                    <TextLink href={route('login')} tabIndex={6}>
+                 {/* Link back to Admin Login */}
+                 <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                    Already have an admin account?{' '}
+                    <Link href={route('login')} className="text-blue-600 hover:text-blue-800"> {/* Added basic link style */}
                         Log in
-                    </TextLink>
-                </div>
-            </form>
+                    </Link>
+                 </div>
+            </Form>
         </AuthLayout>
     );
 }
+
+// No explicit layout assignment needed as AuthLayout is used directly

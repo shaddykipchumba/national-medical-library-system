@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('status')->default('Active');
             $table->json('books')->nullable();
+            $table->string('password'); // Add the password column
+            $table->rememberToken();
+            $table->timestamp('email_verified_at')->nullable();
             $table->timestamps();
         });
     }

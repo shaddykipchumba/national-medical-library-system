@@ -38,6 +38,11 @@ const mainNavItems: NavItem[] = [
         href: '/checkin',
         icon: BookMinus,
     },
+    {
+        title: 'Borrow Requests',
+        href: '/borrow-requests',
+        icon: BookMinus,
+    },
 
     {
         title: 'Reports',

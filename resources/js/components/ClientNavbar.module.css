@@ -1,0 +1,96 @@
+/* ClientNavbar.module.css */
+
+.navbar {
+    display: flex;
+    justify-content: space-between; /* Pushes title and links to opposite ends */
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0 2rem !important; /* Horizontal padding */
+    overflow: hidden; /* Prevent content from spilling out if absolutely necessary */
+}
+
+.navbarTitle {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: white !important;
+    /* --- Additions for title --- */
+    white-space: nowrap;     /* Prevent title from wrapping */
+    overflow: hidden;        /* Hide overflow if title is too long */
+    text-overflow: ellipsis; /* Show "..." if title is too long */
+    flex-shrink: 1;          /* Allow title to shrink if needed, but not wrap */
+    margin-right: 1rem;      /* Add some space between title and links */
+}
+
+.navbarLinks {
+    display: flex;
+    align-items: center;
+    /* --- Additions for links --- */
+    flex-shrink: 0;      /* Prevent this container from shrinking */
+    white-space: nowrap; /* Prevent items inside from wrapping */
+}
+
+/* Styling for individual links, spans, and button-like links */
+.navbarLinks a,
+.navbarLinks span,
+.navbarLinks button {
+    color: white !important;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-block; /* Ensure elements flow inline */
+}
+
+.navbarLinks a:hover,
+.navbarLinks button:hover {
+    color: #cce5ff !important;
+    text-decoration: underline !important;
+}
+
+.navbarLinks span {
+     cursor: default;
+     margin-left: 1.5rem; /* Ensure consistent spacing */
+}
+.navbarLinks span:hover {
+    text-decoration: none !important;
+    color: white !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar {
+         padding: 0 1rem !important; /* Reduced padding further */
+    }
+    .navbarTitle {
+        font-size: 1.3rem !important; /* Slightly smaller title on mobile */
+        margin-right: 0.5rem; /* Less space */
+    }
+
+    .navbarLinks a,
+    .navbarLinks span,
+    .navbarLinks button {
+        margin-left: 0.75rem !important; /* Reduced spacing */
+        font-size: 0.9rem !important; /* Smaller font */
+    }
+}
+
+/* Optional: Even smaller screens */
+@media (max-width: 576px) {
+     .navbarTitle {
+        /* Optionally hide title or make it much smaller on very small screens */
+        /* display: none; */
+        font-size: 1.1rem !important;
+     }
+      .navbarLinks a,
+      .navbarLinks span,
+      .navbarLinks button {
+          margin-left: 0.5rem !important;
+          font-size: 0.8rem !important;
+      }
+}

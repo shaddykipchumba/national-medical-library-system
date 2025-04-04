@@ -1,4 +1,5 @@
 import '../css/app.css';
+import 'antd/dist/reset.css'; // Or antd/dist/antd.css for older versions
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';

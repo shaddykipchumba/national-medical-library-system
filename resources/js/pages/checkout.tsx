@@ -1,278 +1,253 @@
+// File: resources/js/Pages/Checkout.tsx (or similar path for Admin checkout)
+
 import React, { useState, useEffect } from 'react';
-import { Card, Select, Button, Form, DatePicker } from 'antd';
+import { Card, Select, Button, Form, DatePicker, Alert } from 'antd'; // Added Alert
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import moment, { Moment } from 'moment'; // Import Moment
+import AppLayout from '@/layouts/app-layout'; // Assuming Admin Layout
+import { type BreadcrumbItem, PageProps } from '@/types'; // Import PageProps
+import { Head, usePage } from '@inertiajs/react'; // Import usePage
+import moment, { Moment } from 'moment'; // Use Moment.js (or Day.js if preferred)
 
 const MySwal = withReactContent(Swal);
 
+// Declare route if needed
+declare function route(name: string, params?: any, absolute?: boolean): string;
+
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Checkout', href: '/checkout' },
+    { title: 'Dashboard', href: route('dashboard') }, // Use route helper
+    { title: 'Checkout', href: route('checkout') }, // Use route helper
 ];
 
-interface Client {
-    id: number;
-    name: string;
-    books: string[];
-}
+interface Client { id: number; name: string; /* books array is likely not needed here */ }
+interface Book { id: number; title: string; }
+interface BookNumber { id: number; book_number: string; }
 
-interface Book {
-    id: number;
-    title: string;
-}
+// Define Props if any are passed via Inertia (likely none for this page)
+interface CheckoutProps extends PageProps {}
 
-interface BookNumber {
-    id: number;
-    book_number: string;
-}
-
-const Checkout = () => {
+export default function Checkout(props: CheckoutProps) { // Add props if needed
     const [clients, setClients] = useState<Client[]>([]);
     const [books, setBooks] = useState<Book[]>([]);
     const [bookNumbers, setBookNumbers] = useState<BookNumber[]>([]);
-    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-    const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-    const [selectedBookNumber, setSelectedBookNumber] = useState<BookNumber | null>(null);
-    const [returnDate, setReturnDate] = useState<Moment | null>(null); // Use Moment type
+    const [selectedClientId, setSelectedClientId] = useState<number | undefined>(undefined);
+    const [selectedBookId, setSelectedBookId] = useState<number | undefined>(undefined);
+    const [selectedBookNumberId, setSelectedBookNumberId] = useState<number | undefined>(undefined);
+    const [returnDate, setReturnDate] = useState<Moment | null>(null);
     const [form] = Form.useForm();
-    const BOOK_LIMIT = 5;
+    const [loading, setLoading] = useState(false); // Loading state for API calls
+    const [error, setError] = useState<string | null>(null); // Error display state
+    // const BOOK_LIMIT = 5; // Limit check should happen in backend during assignment
+
+    useEffect(() => { fetchClients(); fetchBooks(); }, []);
 
     useEffect(() => {
-        fetchClients();
-        fetchBooks();
-    }, []);
-
-    useEffect(() => {
-        if (selectedBook) {
-            fetchAvailableBookNumbers(selectedBook.id);
+        // Fetch available numbers when a book is selected
+        if (selectedBookId) {
+            fetchAvailableBookNumbers(selectedBookId);
         } else {
-            setBookNumbers([]);
+            setBookNumbers([]); // Clear numbers if no book selected
         }
-    }, [selectedBook]);
+    }, [selectedBookId]);
 
+    // --- Fetching Functions (with basic error handling) ---
     const fetchClients = async () => {
+        // Simplified - Add loading/error handling as needed
         try {
-            const response = await fetch('/api/clients');
-            if (response.ok) {
-                const clientsData = await response.json();
-                setClients(clientsData.clients);
-            }
-        } catch (error) {
-            console.error('Error fetching clients:', error);
-            MySwal.fire('Error', 'Failed to fetch clients. Please check your network connection.', 'error'); // Show error to user
-        }
+            const response = await fetch(route('api.clients.index')); // Use named route
+            const data = await response.json();
+            setClients(data.clients || []);
+        } catch (e) { console.error("Fetch clients error:", e); setError("Could not load clients."); }
     };
-
     const fetchBooks = async () => {
-        try {
-            const response = await fetch('/api/books');
-            if (response.ok) {
-                const booksData = await response.json();
-                setBooks(booksData.books);
-            }
-        } catch (error) {
-            console.error('Error fetching books:', error);
-            MySwal.fire('Error', 'Failed to fetch books. Please check your network connection.', 'error'); // Show error
-        }
+        // Simplified - Add loading/error handling as needed
+         try {
+            const response = await fetch(route('api.books.index')); // Use named route
+            const data = await response.json();
+            setBooks(data.books || []);
+         } catch (e) { console.error("Fetch books error:", e); setError("Could not load books."); }
     };
-
     const fetchAvailableBookNumbers = async (bookId: number) => {
+         // Simplified - Add loading/error handling as needed
         try {
-            const response = await fetch(`/api/book-numbers?book_id=${bookId}&status=available`);
-            if (response.ok) {
-                const bookNumbersData = await response.json();
-                setBookNumbers(bookNumbersData.book_numbers);
-            }
-        } catch (error) {
-            console.error('Error fetching available book numbers:', error);
-             MySwal.fire('Error', 'Failed to fetch book numbers. Please check your network connection.', 'error'); // Show error
-        }
+            // Call API endpoint that specifically gets available numbers for a book
+            // Assuming a route like 'api.books.available-numbers' exists
+             const response = await fetch(route('api.books.available-numbers', { book: bookId })); // Use named route
+             const data = await response.json();
+             setBookNumbers(data.available_numbers || []);
+        } catch (e) { console.error("Fetch book numbers error:", e); setError("Could not load book copies."); setBookNumbers([]); }
     };
 
-    const handleClientChange = (clientId: number) => {
-        const client = clients.find((c) => c.id === clientId);
-        setSelectedClient(client || null);
-        setSelectedBook(null);
-        setSelectedBookNumber(null);
-        setReturnDate(null);
-        setBookNumbers([]);
-        form.setFieldsValue({ book: undefined, bookNumber: undefined, returnDate: undefined }); // Clear form fields
-    };
+    // --- Form Change Handlers ---
+    const handleClientChange = (value: number) => { setSelectedClientId(value); form.resetFields(['book', 'bookNumber', 'returnDate']); setSelectedBookId(undefined); setSelectedBookNumberId(undefined); setReturnDate(null); };
+    const handleBookChange = (value: number) => { setSelectedBookId(value); form.resetFields(['bookNumber', 'returnDate']); setSelectedBookNumberId(undefined); setReturnDate(null); };
+    const handleBookNumberChange = (value: number) => { setSelectedBookNumberId(value); };
+    const handleReturnDateChange = (date: Moment | null, dateString: string) => { setReturnDate(date); }; // Correct signature for DatePicker
 
-    const handleBookChange = (bookId: number) => {
-        const book = books.find((b) => b.id === bookId);
-        setSelectedBook(book || null);
-        setSelectedBookNumber(null);
-        setReturnDate(null);
-        form.setFieldsValue({ bookNumber: undefined, returnDate: undefined });  // Clear form
-    };
-
-    const handleBookNumberChange = (bookNumberId: number) => {
-        const bookNumber = bookNumbers.find((bn) => bn.id === bookNumberId);
-        setSelectedBookNumber(bookNumber || null);
-    };
-
-    const handleReturnDateChange = (date: Moment | null) => { // Use Moment
-        setReturnDate(date);
-    };
-
+    // --- Checkout Logic ---
     const handleCheckout = async () => {
-        if (!selectedClient || !selectedBook || !selectedBookNumber || !returnDate) {
-            Swal.fire('Error', 'Please select a client, book, book number, and return date.', 'error');
+        // Basic frontend validation
+        if (!selectedClientId || !selectedBookId || !selectedBookNumberId || !returnDate) {
+            MySwal.fire('Missing Information', 'Please select a client, book, book number, and return date.', 'warning');
             return;
         }
 
-        if (selectedClient.books && selectedClient.books.length >= BOOK_LIMIT) {
-            Swal.fire('Error', `Client has reached the maximum book limit of ${BOOK_LIMIT}.`, 'error');
-            return;
-        }
+        // Get selected item details for confirmation message (optional)
+        const clientName = clients.find(c => c.id === selectedClientId)?.name;
+        const bookTitle = books.find(b => b.id === selectedBookId)?.title;
+        const bookNumber = bookNumbers.find(bn => bn.id === selectedBookNumberId)?.book_number;
 
-        const bookIdentifier = `${selectedBook.title} - ${selectedBookNumber.book_number}`;
-
-        if (selectedClient.books && selectedClient.books.includes(bookIdentifier)) {
-            Swal.fire('Error', 'This book is already assigned to the client.', 'error');
-            return;
-        }
-
+        // Confirmation Dialog
         const result = await MySwal.fire({
             title: 'Confirm Checkout',
-            text: `Assign book "${selectedBook.title}" (number: ${selectedBookNumber.book_number}) to ${selectedClient.name}?`,
+            // PROBLEM: Comma inside the backticks ``
+            html: `Assign book "<b>${bookTitle || 'Unknown'}</b>" (Copy: <b>${bookNumber || 'Unknown'}</b>) to <b>${clientName || 'Unknown'}</b>?<br/>Return date: <b>${returnDate.format('DD MMM YYYY')}</b>,`, // <--- COMMA HERE IS WRONG
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Yes, Assign it!',
+            confirmButtonText: 'Yes, Assign Book',
             cancelButtonText: 'No, Cancel',
         });
 
         if (result.isConfirmed) {
+            setLoading(true);
+            setError(null);
             try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')!.getAttribute('content');
-                // Update client's assigned books list
-                const clientResponse = await fetch(`/api/clients/${selectedClient.id}`, {
-                    method: 'PUT',
+                const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.getAttribute('content');
+                if (!csrfToken) throw new Error("CSRF token not found");
+
+                // ** CORRECTED API CALL: Use the 'assign' route **
+                const response = await fetch(route('api.book-numbers.assign', { bookNumber: selectedBookNumberId }), {
+                    method: 'PUT', // Method for the assign route
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
                     },
                     body: JSON.stringify({
-                        books: [...(selectedClient.books || []), bookIdentifier],
+                        // Body should match what BookNumberController@assign expects
+                        assigned_to: selectedClientId,
+                        date_to_be_returned: returnDate.format('YYYY-MM-DD'), // Format date correctly
                     }),
                 });
+                // ** END CORRECTION **
 
-                if (clientResponse.ok) {
-                    // Update book number: mark as assigned, set return date, and assign client id
-                    const bookNumberResponse = await fetch(`/api/book-numbers/${selectedBookNumber.id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                        },
-                        body: JSON.stringify({
-                            status: 'assigned',
-                            date_to_be_returned: returnDate.format('YYYY-MM-DD'),
-                            assigned_to: selectedClient.id,
-                        }),
-                    });
+                const responseData = await response.json(); // Try parsing JSON regardless of status
 
-                    if (bookNumberResponse.ok) {
-                        Swal.fire('Success', 'Book assigned successfully!', 'success');
-                        setSelectedClient(null);
-                        setSelectedBook(null);
-                        setSelectedBookNumber(null);
-                        setReturnDate(null);
-                        form.resetFields();
-                        fetchClients(); // Refresh client list
-                        if (selectedBook) {
-                            fetchAvailableBookNumbers(selectedBook.id); //refresh
-                        }
-                    } else {
-                        const errorData = await bookNumberResponse.json(); //attempt to get error message.
-                        Swal.fire('Error',  errorData.message || 'Failed to update the book number.', 'error');
-                    }
+                if (response.ok) {
+                    MySwal.fire('Success!', responseData.message || 'Book assigned successfully!', 'success');
+                    // Reset form and state
+                    form.resetFields();
+                    setSelectedClientId(undefined);
+                    setSelectedBookId(undefined);
+                    setSelectedBookNumberId(undefined);
+                    setReturnDate(null);
+                    setBookNumbers([]); // Clear book numbers as selection is reset
+                    // Optionally refetch clients if their borrowed count might be displayed elsewhere
+                    // fetchClients();
                 } else {
-                    const errorData = await clientResponse.json();
-                    Swal.fire('Error', errorData.message || 'Failed to update the client.', 'error');
+                     // Handle specific errors (like limit reached, book not available) or generic errors
+                     MySwal.fire(
+                        'Assignment Failed',
+                        // Use backticks ` ` for the fallback string to allow interpolation
+                        responseData.message || `Failed to assign book (Status: ${response.status})`,
+                        'error'
+                    );
+                     setError(responseData.message || 'Assignment failed.');
+                      // Potentially refresh available numbers if failure was due to availability change
+                      if (selectedBookId) fetchAvailableBookNumbers(selectedBookId);
                 }
+
             } catch (error: any) {
                 console.error('Error assigning book:', error);
-                Swal.fire('Error', error.message || 'An error occurred while assigning the book.', 'error');
+                 const message = error.message || 'An error occurred while assigning the book.';
+                 MySwal.fire('Error', message, 'error');
+                 setError(message);
+            } finally {
+                 setLoading(false);
             }
         }
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Checkout" />
-            <div className="flex justify-center items-center h-full p-4">
-                <Card title="Book Checkout" className="w-full max-w-md">
-                    <Form form={form} layout="vertical">
-                        <Form.Item label="Client">
+            <Head title="Book Checkout" />
+            <div style={{ maxWidth: '600px', margin: 'auto' }}> {/* Center card */}
+                <Card title="Book Checkout Process">
+                    {error && <Alert message={error} type="error" showIcon closable onClose={() => setError(null)} style={{ marginBottom: 16 }} />}
+                    <Form form={form} layout="vertical" onFinish={handleCheckout}> {/* Add onFinish */}
+                        <Form.Item name="client" label="Select Client" rules={[{ required: true, message: 'Please select a client!' }]}>
                             <Select
                                 showSearch
-                                placeholder="Select a client"
-                                optionFilterProp="children"
-                                filterOption={(input, option) =>
-                                    (option?.children as React.ReactNode).toString().toLowerCase().indexOf(input.toLowerCase()) >= 0
-                                }
+                                placeholder="Search or Select a client"
+                                optionFilterProp="label" // Search by label (client name)
                                 onChange={handleClientChange}
-                                value={selectedClient?.id}
+                                value={selectedClientId}
+                                loading={!clients.length} // Show loading if clients aren't loaded
                                 options={clients.map((client) => ({ value: client.id, label: client.name }))}
-                                name="client" // Added name for form
+                                filterOption={(input, option) => // Custom filter function
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                  }
                             />
                         </Form.Item>
 
-                        <Form.Item label="Book Title">
+                        <Form.Item name="book" label="Select Book Title" rules={[{ required: true, message: 'Please select a book!' }]}>
                             <Select
                                 showSearch
-                                placeholder="Select a book title"
-                                optionFilterProp="children"
-                                filterOption={(input, option) =>
-                                    (option?.children as React.ReactNode).toString().toLowerCase().indexOf(input.toLowerCase()) >= 0
-                                }
+                                placeholder="Search or Select a book title"
+                                optionFilterProp="label"
                                 onChange={handleBookChange}
-                                value={selectedBook?.id}
+                                value={selectedBookId}
+                                disabled={!selectedClientId || !books.length} // Disable if no client or books loaded
+                                loading={!books.length && !!selectedClientId} // Loading while books fetch
                                 options={books.map((book) => ({ value: book.id, label: book.title }))}
-                                disabled={!selectedClient}
-                                name="book" // Added name
+                                 filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                  }
                             />
                         </Form.Item>
 
-                        <Form.Item label="Book Number">
+                        <Form.Item name="bookNumber" label="Select Available Book Number" rules={[{ required: true, message: 'Please select a book number!' }]}>
                             <Select
                                 showSearch
-                                placeholder="Select a book number"
-                                optionFilterProp="children"
-                                filterOption={(input, option) =>
-                                    (option?.children as React.ReactNode).toString().toLowerCase().indexOf(input.toLowerCase()) >= 0
-                                }
+                                placeholder="Select an available book number"
+                                optionFilterProp="label"
                                 onChange={handleBookNumberChange}
-                                value={selectedBookNumber?.id}
-                                options={bookNumbers.map((bookNumber) => ({ value: bookNumber.id, label: bookNumber.book_number }))}
-                                disabled={!selectedBook}
-                                name="bookNumber" // Added name
+                                value={selectedBookNumberId}
+                                disabled={!selectedBookId || bookNumbers.length === 0} // Disable if no book or numbers
+                                loading={!!selectedBookId && !bookNumbers.length} // Loading while numbers fetch
+                                options={bookNumbers.map((bn) => ({ value: bn.id, label: bn.book_number }))}
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                  }
+                                notFoundContent={selectedBookId ? "No available copies found" : "Select a book first"} // Contextual message
                             />
                         </Form.Item>
 
-                        <Form.Item label="Return Date">
+                        <Form.Item name="returnDate" label="Return Date" rules={[{ required: true, message: 'Please select a return date!' }]}>
                             <DatePicker
-                                onChange={handleReturnDateChange}
+                                onChange={handleReturnDateChange} // Use correct onChange signature
                                 value={returnDate}
-                                disabled={!selectedBookNumber}
-                                style={{ width: '100%' }} // Added inline style
-                                name="returnDate"
+                                disabled={!selectedBookNumberId}
+                                style={{ width: '100%' }}
+                                format="YYYY-MM-DD" // Specify format
+                                disabledDate={(current) => {
+                                    // Can not select days before today
+                                    return current && current < moment().endOf('day');
+                                }}
                             />
                         </Form.Item>
 
                         <Form.Item>
+                            {/* Button is now triggered by Form's onFinish, but we keep onClick for direct click handling logic */}
                             <Button
                                 type="primary"
-                                onClick={handleCheckout}
-                                disabled={!selectedClient || !selectedBook || !selectedBookNumber || !returnDate}
+                                onClick={handleCheckout} // Keep direct handler for checks before form submit (or move checks here)
+                                // htmlType="submit" // Alternative: Let Form onFinish handle it after validation
+                                loading={loading}
+                                disabled={!selectedClientId || !selectedBookId || !selectedBookNumberId || !returnDate}
+                                block // Make button full width
                             >
-                                Checkout
+                                Assign Book to Client
                             </Button>
                         </Form.Item>
                     </Form>
@@ -282,4 +257,4 @@ const Checkout = () => {
     );
 };
 
-export default Checkout;
+// export default Checkout; // Export was missing in provided code

@@ -11,6 +11,8 @@ return [
     | reset "broker" for your application. You may change these values
     | as required, but they're a perfect start for most applications.
     |
+    | 'web' guard (using 'users' provider) remains the default.
+    |
     */
 
     'defaults' => [
@@ -36,10 +38,17 @@ return [
     */
 
     'guards' => [
-        'web' => [
+        'web' => [ // Existing guard, likely for Admins/standard Users
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'users', // Points to the 'users' provider below
         ],
+
+        // ****** ADDED: CLIENT GUARD ******
+        'client' => [
+            'driver' => 'session', // Use session driver for web login
+            'provider' => 'clients', // Points to the NEW 'clients' provider below
+        ],
+        // ****** END ADDED: CLIENT GUARD ******
     ],
 
     /*
@@ -60,10 +69,17 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'users' => [ // Existing provider for App\Models\User
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
+
+        // ****** ADDED: CLIENTS PROVIDER ******
+        'clients' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Client::class, // Points to your Client model
+        ],
+        // ****** END ADDED: CLIENTS PROVIDER ******
 
         // 'users' => [
         //     'driver' => 'database',
@@ -91,12 +107,22 @@ return [
     */
 
     'passwords' => [
-        'users' => [
+        'users' => [ // Existing broker for 'users' provider
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // ****** ADDED: CLIENTS PASSWORD BROKER (Optional but Recommended) ******
+        // Allows clients to use password reset functionality via the 'clients' provider
+        'clients' => [
+            'provider' => 'clients', // Use the 'clients' provider
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'), // Can share the same table
+            'expire' => 60, // Can use same expiry/throttle or customize
+            'throttle' => 60,
+        ],
+        // ****** END ADDED: CLIENTS PASSWORD BROKER ******
     ],
 
     /*

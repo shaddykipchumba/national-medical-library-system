@@ -1,110 +1,162 @@
-import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { useEffect, FormEventHandler } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+// --- Ant Design Imports ---
+import { Form, Input, Button, Checkbox, Row, Col, Typography, Alert, Space, Divider } from 'antd';
+import { MailOutlined, LockOutlined } from '@ant-design/icons';
+// --- Layout Import ---
+import AuthLayout from '@/layouts/auth-layout'; // ****** USE YOUR AUTH LAYOUT ******
+// --- Type Imports ---
+import type { PageProps } from '@/types';
 
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+// Declare route function if not globally typed
+declare function route(name: string, params?: any, absolute?: boolean): string;
 
-type LoginForm = {
-    email: string;
-    password: string;
-    remember: boolean;
-};
-
-interface LoginProps {
+interface Props extends PageProps {
     status?: string;
-    canResetPassword: boolean;
+    canResetPassword?: boolean;
 }
 
-export default function Login({ status, canResetPassword }: LoginProps) {
-    const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
+interface LoginFormData {
+    email?: string;
+    password?: string;
+    remember?: boolean;
+}
+
+export default function Login({ status, canResetPassword }: Props) {
+    const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
         remember: false,
     });
 
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-        post(route('login'), {
+    useEffect(() => {
+        return () => {
+            reset('password');
+        };
+    }, []);
+
+    const onFinish = (values: LoginFormData) => {
+        post(route('login'), { // Submits to Admin login route
             onFinish: () => reset('password'),
         });
     };
 
     return (
-        <AuthLayout title="Log in to your account" description="Enter your email and password below to log in">
-            <Head title="Log in" />
+        // Use AuthLayout as the main wrapper, passing title and description
+        <AuthLayout
+            title="Admin Login"
+            description="Enter your credentials to access the administration panel."
+        >
+            <Head title="Admin Log in" /> {/* Head still sets browser tab title */}
 
-            <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            required
-                            autoFocus
-                            tabIndex={1}
-                            autoComplete="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder="email@example.com"
-                        />
-                        <InputError message={errors.email} />
-                    </div>
+            {/* Status message display */}
+            {status && <Alert message={status} type="success" showIcon closable className="mb-4" />}
 
-                    <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                            {canResetPassword && (
-                                <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
+            {/* Ant Design Form */}
+            <Form
+                name="admin_login"
+                initialValues={{ remember: data.remember }}
+                onFinish={onFinish}
+                layout="vertical"
+                requiredMark={false}
+                // Remove extra top margin if AuthLayout provides spacing
+                // style={{ marginTop: '24px' }}
+            >
+                {/* Email Field */}
+                <Form.Item
+                    // Removed label prop if AuthLayout shows title/desc
+                    name="email"
+                    validateStatus={errors.email ? 'error' : ''}
+                    help={errors.email}
+                    rules={[{ required: true, message: 'Please input your Email!' }]}
+                >
+                    <Input
+                        prefix={<MailOutlined />}
+                        placeholder="Admin Email (e.g., admin@example.com)"
+                        value={data.email}
+                        onChange={(e) => setData('email', e.target.value)}
+                        size="large"
+                        autoFocus
+                    />
+                </Form.Item>
+
+                {/* Password Field */}
+                <Form.Item
+                    // Removed label prop if AuthLayout shows title/desc
+                    name="password"
+                    validateStatus={errors.password ? 'error' : ''}
+                    help={errors.password}
+                    rules={[{ required: true, message: 'Please input your Password!' }]}
+                >
+                    <Input.Password
+                        prefix={<LockOutlined />}
+                        placeholder="Password"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                        size="large"
+                    />
+                </Form.Item>
+
+                {/* Remember Me & Forgot Password Row */}
+                <Form.Item>
+                    <Row justify="space-between">
+                        <Col>
+                            <Checkbox
+                                checked={data.remember}
+                                onChange={(e) => setData('remember', e.target.checked)}
+                            >
+                                Remember me
+                            </Checkbox>
+                        </Col>
+                        {canResetPassword && (
+                            <Col>
+                                <Link
+                                     href={route('password.request')}
+                                     className="text-sm text-blue-600 hover:text-blue-800" // Adjust class if needed
+                                >
                                     Forgot password?
-                                </TextLink>
-                            )}
-                        </div>
-                        <Input
-                            id="password"
-                            type="password"
-                            required
-                            tabIndex={2}
-                            autoComplete="current-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
-                        <InputError message={errors.password} />
-                    </div>
+                                </Link>
+                            </Col>
+                        )}
+                    </Row>
+                </Form.Item>
 
-                    <div className="flex items-center space-x-3">
-                        <Checkbox
-                            id="remember"
-                            name="remember"
-                            checked={data.remember}
-                            onClick={() => setData('remember', !data.remember)}
-                            tabIndex={3}
-                        />
-                        <Label htmlFor="remember">Remember me</Label>
-                    </div>
-
-                    <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Log in
+                {/* Submit Button */}
+                <Form.Item>
+                    <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={processing}
+                        block
+                        size="large"
+                    >
+                        Log in as Admin
                     </Button>
-                </div>
+                </Form.Item>
 
-                <div className="text-muted-foreground text-center text-sm">
-                    Don't have an account?{' '}
-                    <TextLink href={route('register')} tabIndex={5}>
+                {/* Link to Admin Register */}
+                 <div style={{ textAlign: 'center', marginTop: '10px', marginBottom: '20px' }}>
+                    Need an admin account?{' '}
+                    <Link href={route('register')}> {/* Points to ADMIN register */}
                         Sign up
-                    </TextLink>
-                </div>
-            </form>
+                    </Link>
+                 </div>
 
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
-        </AuthLayout>
+                <Divider>Or</Divider>
+
+                {/* Button to switch to Client Login */}
+                <Form.Item>
+                    <Link href={route('client.login')} style={{ display: 'block', width: '100%' }}>
+                        <Button type="default" block size="large">
+                            Login as Client instead
+                        </Button>
+                    </Link>
+                </Form.Item>
+
+            </Form>
+        </AuthLayout> // Close AuthLayout
     );
 }
+
+// Remove the explicit layout assignment, as AuthLayout is now used directly
+// Login.layout = (page: React.ReactElement) => <GuestLayout children={page} />;
